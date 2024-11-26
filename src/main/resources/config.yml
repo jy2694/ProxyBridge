@@ -1,0 +1,4 @@
+# velocity 에서 기입한 서버 이름
+server: 'lobby'
+# velocity 에 기입된 서버의 개수
+server-count: 2
