@@ -1,17 +1,20 @@
 package io.github.jy2694.proxyBridge.network;
 
-import io.github.jy2694.proxyBridge.entity.Message;
-import io.github.jy2694.proxyBridge.entity.ServerData;
-import io.github.jy2694.proxyBridge.entity.UserData;
+import io.github.jy2694.proxyBridge.entity.*;
+import net.md_5.bungee.api.ChatMessageType;
+import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public abstract class Channel {
 
+    public Map<String, List<SerializableRunnable>> queuedRunnable = new ConcurrentHashMap<>();
     private Map<UUID, Integer> responseCounter = new ConcurrentHashMap<>();
     private Map<UUID, Object> responseResult = new ConcurrentHashMap<>();
 
@@ -47,6 +50,26 @@ public abstract class Channel {
                 responseCounter.remove(message.getMessageId());
             }
             case SERVER_STATUS_REQUEST -> send(Message.ofServerDataResponse(message.getMessageId(), message.getFrom(), ServerData.adapt(Bukkit.getServer())));
+            case SEND_MESSAGE -> {
+                String[] msg = ((String) message.getBody()).split("===");
+                if(!Bukkit.getOfflinePlayer(msg[0]).isOnline()) return;
+                Bukkit.getPlayer(msg[0]).sendMessage(msg[1]);
+            }
+            case SEND_ACTIONBAR -> {
+                String[] msg = ((String) message.getBody()).split("===");
+                if(!Bukkit.getOfflinePlayer(msg[0]).isOnline()) return;
+                Bukkit.getPlayer(msg[0]).spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(msg[1]));
+            }
+            case SEND_TITLE -> {
+                String[] msg = ((String) message.getBody()).split("===");
+                if(!Bukkit.getOfflinePlayer(msg[0]).isOnline()) return;
+                Bukkit.getPlayer(msg[0]).sendTitle(msg[1], msg[2], Integer.parseInt(msg[3]), Integer.parseInt(msg[4]), Integer.parseInt(msg[5]));
+            }
+            case QUEUE_RUNNABLE -> {
+                RunnableData data = (RunnableData) message.getBody();
+                if(!queuedRunnable.containsKey(data.getKey())) queuedRunnable.put(data.getKey(), new CopyOnWriteArrayList<>());
+                queuedRunnable.get(data.getKey()).add(data.getRunnable());
+            }
         }
     }
     public abstract void send(Message message);

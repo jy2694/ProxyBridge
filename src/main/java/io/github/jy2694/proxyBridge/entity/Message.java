@@ -29,6 +29,22 @@ public class Message<T> {
         return new Message<>(messageId, MessageType.SERVER_STATUS_RESPONSE, body, to);
     }
 
+    public static Message<String> ofSendTitle(String to, String player, String title, String subtitle, int fadeIn, int stay, int fadeOut){
+        return new Message<>(MessageType.SEND_TITLE, player + "===" + title + "===" + subtitle + "===" + fadeIn + "===" + stay + "===" + fadeOut, to);
+    }
+
+    public static Message<String> ofSendActionBar(String to, String player, String message){
+        return new Message<>(MessageType.SEND_ACTIONBAR, player + "===" + message, to);
+    }
+
+    public static Message<String> ofSendMessage(String to, String player, String message){
+        return new Message<>(MessageType.SEND_MESSAGE, player + "===" + message, to);
+    }
+
+    public static Message<RunnableData> ofQueueRunnable(String to, RunnableData body){
+        return new Message<>(MessageType.QUEUE_RUNNABLE, body, to);
+    }
+
     public static Message<?> parse(String text) throws IOException, ClassNotFoundException {
         String[] parts = text.split(":");
         UUID messageId = UUID.fromString(parts[0]);

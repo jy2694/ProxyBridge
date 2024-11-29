@@ -9,6 +9,7 @@ public enum MessageType {
     USERDATA_RESPONSE(UserData.class),
     SERVER_STATUS_REQUEST(void.class),
     SERVER_STATUS_RESPONSE(ServerData.class),
+    QUEUE_RUNNABLE(RunnableData.class),
     SEND_MESSAGE(String.class),
     SEND_TITLE(String.class),
     SEND_ACTIONBAR(String.class);
