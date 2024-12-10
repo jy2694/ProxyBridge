@@ -7,6 +7,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.entity.Player;
 
+import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
@@ -30,6 +31,18 @@ public class OnlinePlayer {
     public OnlinePlayer(String name, UUID uniqueId) {
         this.name = name;
         this.uniqueId = uniqueId;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if(obj == this) return true;
+        if(!(obj instanceof OnlinePlayer onlinePlayer)) return false;
+        return Objects.equals(name, onlinePlayer.name) || Objects.equals(uniqueId, onlinePlayer.uniqueId);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name, uniqueId);
     }
 
     public CompletableFuture<Double> getHealthScale(){

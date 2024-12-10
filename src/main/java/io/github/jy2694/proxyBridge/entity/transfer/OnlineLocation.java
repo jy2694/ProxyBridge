@@ -2,7 +2,10 @@ package io.github.jy2694.proxyBridge.entity.valina;
 
 import org.bukkit.Location;
 
-public class OnlineLocation {
+import java.io.Serializable;
+import java.util.Objects;
+
+public class OnlineLocation implements Serializable {
 
     public static OnlineLocation adapt(Location location, String server){
         return new OnlineLocation(
@@ -32,6 +35,24 @@ public class OnlineLocation {
         this.world = world;
         this.pitch = pitch;
         this.yaw = yaw;
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        if (this == object) return true;
+        if (!(object instanceof OnlineLocation that)) return false;
+        return Double.compare(x, that.x) == 0
+                && Double.compare(y, that.y) == 0
+                && Double.compare(z, that.z) == 0
+                && Float.compare(pitch, that.pitch) == 0
+                && Float.compare(yaw, that.yaw) == 0
+                && Objects.equals(server, that.server)
+                && Objects.equals(world, that.world);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(x, y, z, server, world, pitch, yaw);
     }
 
     public double getX() {
