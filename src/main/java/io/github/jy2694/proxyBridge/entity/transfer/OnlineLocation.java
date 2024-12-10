@@ -1,4 +1,4 @@
-package io.github.jy2694.proxyBridge.entity.valina;
+package io.github.jy2694.proxyBridge.entity.transfer;
 
 import org.bukkit.Location;
 

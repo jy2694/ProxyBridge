@@ -8,6 +8,7 @@ import org.bukkit.plugin.messaging.PluginMessageListener;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.util.UUID;
 
 public class PluginMessageChannel extends Channel implements PluginMessageListener {
 
@@ -67,11 +68,12 @@ public class PluginMessageChannel extends Channel implements PluginMessageListen
             short len = in.readShort();
             byte[] msg = new byte[len];
             in.readFully(msg);
-            Message message = Message.parse(new String(msg, StandardCharsets.UTF_8));
+            String line = new String(msg, StandardCharsets.UTF_8);
+            Message message;
+            if(isResponse(UUID.fromString(line.split(Message.MESSAGE_DELIMITER)[0]))) message = Message.parseAsResponse(line);
+            else message = Message.parseAsRequest(line);
             receiveHandle(message);
         } catch (IOException e) {
-            throw new RuntimeException(e);
-        } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
     }

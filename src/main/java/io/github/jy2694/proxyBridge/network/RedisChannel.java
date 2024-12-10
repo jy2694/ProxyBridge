@@ -6,7 +6,7 @@ import io.lettuce.core.RedisURI;
 import io.lettuce.core.pubsub.RedisPubSubListener;
 import io.lettuce.core.pubsub.StatefulRedisPubSubConnection;
 
-import java.io.IOException;
+import java.util.UUID;
 
 public class RedisChannel extends Channel implements RedisPubSubListener<String, String> {
 
@@ -62,14 +62,10 @@ public class RedisChannel extends Channel implements RedisPubSubListener<String,
     @Override
     public void message(String channel, String data) {
         if(!channel.equals("proxy_bridge")) return;
-        try {
-            Message message = Message.parse(data);
-            receiveHandle(message);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException(e);
-        }
+        Message message;
+        if(isResponse(UUID.fromString(data.split(Message.MESSAGE_DELIMITER)[0]))) message = Message.parseAsResponse(data);
+        else message = Message.parseAsRequest(data);
+        receiveHandle(message);
     }
 
     @Override

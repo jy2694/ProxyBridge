@@ -1,106 +1,78 @@
 package io.github.jy2694.proxyBridge.entity;
 
-import java.io.IOException;
+import org.bukkit.Bukkit;
+
 import java.util.UUID;
 
-public class Message<T> {
+public class Message {
 
-    public static Message<Void> ofNoReply(UUID messageId, String to) {
-        return new Message<>(messageId, MessageType.NO_REPLY, null, to);
+    public static final String PARAMETER_DELIMITER = "<PARAM_DELI/>";
+    public static final String MESSAGE_DELIMITER = ":";
+
+    public static Message ofRequest(MessageType type, String to, Object... parameter){
+        return new Message(type, to, "" , parameter);
     }
 
-    public static Message<String> ofUserDataRequest(String name) {
-        return new Message<>(MessageType.USERDATA_REQUEST_BY_NAME, name);
+    public static Message ofResponse(UUID messageId, MessageType type, String to, Object parameter){
+        return new Message(messageId, type, to, "", parameter);
     }
 
-    public static Message<UUID> ofUserDataRequest(UUID uuid) {
-        return new Message<>(MessageType.USERDATA_REQUEST_BY_UUID, uuid);
-    }
-
-    public static Message<UserData> ofUserDataResponse(UUID messageId, String to, UserData body) {
-        return new Message<>(messageId, MessageType.USERDATA_RESPONSE, body, to);
-    }
-
-    public static Message<Void> ofServerDataRequest(String server){
-        return new Message<>(MessageType.SERVER_STATUS_REQUEST, null, server);
-    }
-
-    public static Message<ServerData> ofServerDataResponse(UUID messageId, String to, ServerData body){
-        return new Message<>(messageId, MessageType.SERVER_STATUS_RESPONSE, body, to);
-    }
-
-    public static Message<String> ofSendTitle(String to, String player, String title, String subtitle, int fadeIn, int stay, int fadeOut){
-        return new Message<>(MessageType.SEND_TITLE, player + "===" + title + "===" + subtitle + "===" + fadeIn + "===" + stay + "===" + fadeOut, to);
-    }
-
-    public static Message<String> ofSendActionBar(String to, String player, String message){
-        return new Message<>(MessageType.SEND_ACTIONBAR, player + "===" + message, to);
-    }
-
-    public static Message<String> ofSendMessage(String to, String player, String message){
-        return new Message<>(MessageType.SEND_MESSAGE, player + "===" + message, to);
-    }
-
-    public static Message<RunnableData> ofQueueRunnable(String to, RunnableData body){
-        return new Message<>(MessageType.QUEUE_RUNNABLE, body, to);
-    }
-
-    public static Message<?> parse(String text) throws IOException, ClassNotFoundException {
-        String[] parts = text.split(":");
+    public static Message parseAsRequest(String text) {
+        String[] parts = text.split(MESSAGE_DELIMITER);
         UUID messageId = UUID.fromString(parts[0]);
         MessageType type = MessageType.valueOf(parts[1]);
-        String body = parts[2].replaceAll("<colons/>", ":");
-        Object data = null;
-        if(!body.equals("null")) {
-            switch (type) {
-                case USERDATA_RESPONSE:
-                    data = UserData.deserialize(body);
-                    break;
-                case SERVER_STATUS_RESPONSE:
-                    data = ServerData.deserialize(body);
-                    break;
-                case USERDATA_REQUEST_BY_UUID:
-                    data = UUID.fromString(body);
-                    break;
-                case SERVER_STATUS_REQUEST:
-                case NO_REPLY:
-                    data = null;
-                    break;
-                case USERDATA_REQUEST_BY_NAME:
-                case SEND_MESSAGE:
-                case SEND_ACTIONBAR:
-                case SEND_TITLE:
-                    data = body;
-            }
-        }
+        String[] body = parts[2].replaceAll("<colons/>", MESSAGE_DELIMITER).split(PARAMETER_DELIMITER);
+        Object[] data = body.length > 0 && !body[0].equals("null") ? new Object[body.length] : null;
         String to = parts[3];
         String from = parts[4];
-        return new Message<>(messageId, type, data, to, from);
+        if (body.length > 0 && !body[0].equals("null")) {
+            Class<?>[] types = type.getRequestType();
+            for (int i = 0; i < body.length; i++) {
+                data[i] = MessageType.parameterDeserialize(body[i], types[i]);
+            }
+        }
+        return new Message(messageId, type, to, from, data);
+    }
+
+    public static Message parseAsResponse(String text){
+        String[] parts = text.split(MESSAGE_DELIMITER);
+        UUID messageId = UUID.fromString(parts[0]);
+        MessageType type = MessageType.valueOf(parts[1]);
+        String[] body = parts[2].replaceAll("<colons/>", MESSAGE_DELIMITER).split(PARAMETER_DELIMITER);
+        Object[] data = body.length > 0 && !body[0].equals("null") ? new Object[body.length] : null;
+        String to = parts[3];
+        String from = parts[4];
+        if (body.length > 0 && !body[0].equals("null")) {
+            for (int i = 0; i < body.length; i++) {
+                data[i] = MessageType.parameterDeserialize(body[i], type.getResponseType());
+            }
+        }
+        return new Message(messageId, type, to, from, data);
     }
 
     private UUID messageId;
     private MessageType type;
-    private T body;
+    private Object[] body;
     private String to;
     private String from;
-    public Message(UUID messageId,  MessageType type, T body, String to, String from) {
+    public Message(UUID messageId,  MessageType type, String to, String from, Object... body) {
         this.messageId = messageId;
         this.type = type;
         this.body = body;
         this.to = to;
         this.from = from;
     }
-    public Message(MessageType type, T body, String to, String from) {
-        this(UUID.randomUUID(), type, body, to, from);
+    public Message(MessageType type, String to, String from, Object... body) {
+        this(UUID.randomUUID(), type, to, from, body);
     }
-    public Message(UUID messageId, MessageType type, T body, String to) {
-        this(messageId, type, body, to, "");
+    public Message(UUID messageId, MessageType type, String to, Object... body) {
+        this(messageId, type, to, "", body);
     }
-    public Message(MessageType type, T body, String to) {
-        this(type, body, to, "");
+    public Message(MessageType type, String to, Object... body) {
+        this(type, to, "", body);
     }
-    public Message(MessageType type, T body) {
-        this(type, body, "ALL");
+    public Message(MessageType type, Object... body) {
+        this(type, "ALL", body);
     }
 
     public UUID getMessageId() {
@@ -111,7 +83,7 @@ public class Message<T> {
         return type;
     }
 
-    public T getBody() {
+    public Object[] getBody() {
         return body;
     }
 
@@ -125,6 +97,15 @@ public class Message<T> {
 
     @Override
     public String toString(){
-        return messageId.toString()+":"+type.getKey()+":"+(body == null ? "null":body.toString().replaceAll(":", "<colons/>"))+":"+to+":"+from;
+        StringBuilder bodyBuilder = new StringBuilder();
+        for(Object object : getBody()){
+            if(!bodyBuilder.isEmpty()) bodyBuilder.append(PARAMETER_DELIMITER);
+            bodyBuilder.append(MessageType.parameterSerialize(object));
+        }
+        return messageId.toString()
+                +MESSAGE_DELIMITER+type.getKey()
+                +MESSAGE_DELIMITER+(body == null || body[0] == null ? "null": bodyBuilder.toString())
+                +MESSAGE_DELIMITER+to
+                +MESSAGE_DELIMITER+from;
     }
 }

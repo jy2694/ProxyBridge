@@ -1,4 +1,4 @@
-package io.github.jy2694.proxyBridge.entity;
+package io.github.jy2694.proxyBridge.entity.transfer;
 
 import java.io.*;
 import java.util.Base64;
